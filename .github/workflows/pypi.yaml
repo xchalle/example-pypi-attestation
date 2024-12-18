@@ -3,7 +3,7 @@ name: "[Pypi] python library - Sign (blob), Attest and Push to JFrog Ledger"
 on:
   push:
     branches:
-    - main
+    - master
 
 # 1. Permission needed to be define inside the workflow file
 permissions:
