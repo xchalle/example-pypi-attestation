@@ -44,7 +44,7 @@ jobs:
         import subprocess
         import sys
 
-        path = "${{ inputs.path }}"
+        path = "python-lib/dist"
 
         # Check if the provided path exists
         if not os.path.exists(path):
