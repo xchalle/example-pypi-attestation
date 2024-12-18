@@ -75,4 +75,4 @@ jobs:
     - name: Push to Pypi
       working-directory: python-lib
       run: |
-        twine upload --attestations dist/*.tar.gz
+        twine upload --attestations dist/*
