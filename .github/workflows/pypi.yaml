@@ -1,0 +1,74 @@
+name: "[Pypi] python library - Sign (blob), Attest and Push to JFrog Ledger"
+
+on:
+  push:
+    branches:
+    - main
+
+# 1. Permission needed to be define inside the workflow file
+permissions:
+  contents: read
+  id-token: write # Mandatory for attestations
+  attestations: write # Mandatory for attestations
+
+jobs:
+  example:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.x'
+    - name: Build the python library
+      working-directory: python-lib
+      run: |
+        python3 -m pip install --upgrade build twine
+        python3 -m build
+    - name: Attest and Sign attestation
+      uses: actions/attest-build-provenance@v1
+      with:
+        subject-path: python-lib/dist/*
+        predicate-type: 'https://docs.pypi.org/attestations/publish/v1'
+        predicate: '{}'
+    - name: Install Cosign
+      if: ${{ github.event.repository.visibility == 'public' }}
+      uses: sigstore/cosign-installer@v3
+    - name: Sign Blobs
+      if: ${{ github.event.repository.visibility == 'public' }}
+      shell: python
+      run: |
+        import os
+        import glob
+        import subprocess
+        import sys
+
+        path = "${{ inputs.path }}"
+
+        # Check if the provided path exists
+        if not os.path.exists(path):
+            print(f"Error: The specified path '{path}' does not exist.")
+            sys.exit(1)
+
+        # Function to sign a file
+        def sign_file(file_path):
+            print(f"Signing file: {file_path}")
+            signature_file = f"{file_path}.sig"
+            bundle_file = f"{file_path}.bundle"
+            try:
+                subprocess.run(["cosign", "sign-blob", "--yes", file_path, "--output-signature", signature_file, "--bundle", bundle_file], check=True)
+            except subprocess.CalledProcessError as e:
+                print(f"Error signing file {file_path}: {e}")
+                sys.exit(1)
+
+        # If the input is a directory, sign all files in the directory
+        if os.path.isdir(path):
+            for root, dirs, files in os.walk(path):
+                for file in files:
+                    full_path = os.path.join(root, file)
+                    sign_file(full_path)
+    - name: Push to Pypi
+      working-directory: python-lib
+      run: |
+        twine upload --attestations dist/*
