@@ -78,4 +78,4 @@ jobs:
         TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
       working-directory: python-lib
       run: |
-        twine upload --attestations dist/*
+        twine upload --verbose --attestations dist/*
