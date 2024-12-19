@@ -73,6 +73,9 @@ jobs:
     #                 full_path = os.path.join(root, file)
     #                 sign_file(full_path)
     - name: Push to Pypi
+      env:
+        TWINE_USERNAME: __token__
+        TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
       working-directory: python-lib
       run: |
         twine upload --attestations dist/*
